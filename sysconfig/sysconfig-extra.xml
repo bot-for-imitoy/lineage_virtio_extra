@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  把预装的应用加入电池优化（Doze / App Standby）白名单，
+  保证它们在后台也能检查并执行更新，不会因为进入空闲模式而错过更新。
+-->
+<config>
+    <allow-in-power-save package="org.fdroid.fdroid" />
+    <allow-in-power-save package="org.fdroid.fdroid.privileged" />
+    <allow-in-power-save package="dev.imranr.obtainium" />
+    <allow-in-power-save package="at.bitfire.davdroid" />
+    <!-- microG：后台要保持 GCM/FCM 长连接和位置上报，不能被 Doze 冻结 -->
+    <allow-in-power-save package="com.google.android.gms" />
+</config>

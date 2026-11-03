@@ -1,0 +1,19 @@
+//
+// Calendula 外观覆盖
+//   * 显示名：Calendula -> Calendar / 日历
+//   * 启动器图标：换成 LineageOS 自带日历 Etar 的图标
+//
+// 图标资源（drawable/ic_launcher_background.xml、ic_launcher_foreground.xml、
+// mipmap-anydpi*/ic_launcher*.xml）直接取自 packages/apps/Etar/app/src/main/res，
+// 版权归 The LineageOS Project（Apache-2.0）。
+//
+// 目标是 de.jeanlucmakiola.calendula 的 mipmap/ic_launcher 与
+// mipmap/ic_launcher_round（它的 AndroidManifest 同时声明了 android:icon
+// 和 android:roundIcon）。该 APK 把自适应图标放在 anydpi（无 -v26）目录下，
+// 所以这里 anydpi 与 anydpi-v26 各放一份，保证两种配置都能命中。
+//
+runtime_resource_overlay {
+    name: "CalendulaLabelOverlay",
+    certificate: "platform",
+    product_specific: true,
+}

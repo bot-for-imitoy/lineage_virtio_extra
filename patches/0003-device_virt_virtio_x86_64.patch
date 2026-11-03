@@ -1,0 +1,119 @@
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index 8f056a4..00c044e 100644
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -20,6 +20,11 @@ TARGET_CPU_ABI := x86_64
+ TARGET_ARCH := x86_64
+ TARGET_ARCH_VARIANT := sandybridge
+ 
++# Prebuilt apps (microG / F-Droid / Obtainium / DAVx5 / Calendula / ConnectYou)
++# skip dexpreopt: dex2oat on a 100MB+ prebuilt APK is very memory hungry on this
++# 16GB box, and the apps get background-dexopted after first boot anyway.
++DONT_DEXPREOPT_PREBUILTS := true
++
+ # Boot manager
+ TARGET_GRUB_BOOT_CONFIGS += $(DEVICE_PATH)/bootmgr/grub/grub-boot.cfg
+ 
+@@ -30,13 +35,23 @@ $(call soong_config_set_string_list,minigbm_upstream,cflags,-DDRV_I915 -DDRV_XE)
+ BOARD_MESA3D_GALLIUM_DRIVERS += crocus iris
+ BOARD_MESA3D_VULKAN_DRIVERS += intel intel_hasvk
+ 
++# Mesa 25.3 counts iris/intel as "drivers using OpenCL" and therefore asks
++# pkg-config for libclc, which does not exist in this tree (the meson cross
++# file limits pkg-config to the generated stub .pc files). Use the prebuilt
++# mesa_clc from prebuilts/mesa-build-dep instead of building it locally, the
++# same way device/mainline/common/optional/mesa/board.mk does.
++BOARD_MESA3D_MESON_ARGS += \
++    -Dmesa-clc=system
++
+ # Kernel
+ BOARD_KERNEL_CMDLINE += \
+     8250.nr_uarts=1
+ 
+ TARGET_KERNEL_CONFIG_EXT += \
+     $(DEVICE_PATH)/configs/kernel/virtio_x86_64.config \
+-    $(DEVICE_PATH)/configs/kernel/passthrough_gpus.config
++    $(DEVICE_PATH)/configs/kernel/kernelsu.config \
++    $(DEVICE_PATH)/configs/kernel/passthrough_gpus.config \
++    $(DEVICE_PATH)/configs/kernel/no-ibt.config
+ 
+ BOARD_KERNEL_IMAGE_NAME := bzImage
+ BOARD_LINUX_SERIAL_DEVICE := ttyS0
+diff --git a/configs/kernel/kernelsu.config b/configs/kernel/kernelsu.config
+new file mode 100644
+index 0000000..c663cf4
+--- /dev/null
++++ b/configs/kernel/kernelsu.config
+@@ -0,0 +1,10 @@
++# KernelSU-Next (built-in / GKI-less integration)
++#
++# The 6.12 x86_64 kernel routes syscalls through direct conditional branches
++# (upstream syscall-table hardening, commit 1e3ad78334a6), so the classic
++# sys_call_table[] patching no longer takes effect. Enabling this option makes
++# KernelSU-Next patch the hardened dispatcher at runtime instead, which is the
++# upstream-recommended way for KernelSU >= 3.3.0.
++CONFIG_KSU=y
++CONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=y
++# CONFIG_KSU_DEBUG is not set
+diff --git a/configs/kernel/no-ibt.config b/configs/kernel/no-ibt.config
+new file mode 100644
+index 0000000..63baae1
+--- /dev/null
++++ b/configs/kernel/no-ibt.config
+@@ -0,0 +1,25 @@
++# KernelSU-Next compatibility: disable x86 CET Indirect Branch Tracking
++#
++# gki_defconfig leaves CONFIG_X86_KERNEL_IBT at its `def_bool y` default, which
++# also turns on CONFIG_X86_CET and CONFIG_FINEIBT. FineIBT validates every
++# indirect call target with an ENDBR64 landing pad, but objtool only emits the
++# pad for functions whose address is taken at compile time. KernelSU-Next
++# resolves kernel symbols by name at runtime and calls them indirectly through
++# its own function pointers, so those targets have no ENDBR64 and the first
++# such call raises #CP:
++#
++#   Missing ENDBR: kallsyms_on_each_match_symbol+0x0/0x30
++#   kernel BUG at arch/x86/kernel/cet.c:132!
++#
++# Booting with `ibt=off` confirms this: the same call then succeeds and KSU
++# finishes initialising.
++#
++# Turning the option off drops IBT/FineIBT (forward-edge CFI) only. CONFIG_CFI_CLANG
++# stays enabled, so kCFI type checks on indirect calls are still compiled in and
++# enforced -- the kernel keeps its primary CFI protection.
++#
++# CONFIG_X86_KERNEL_IBT is a user-settable symbol (prompt + def_bool y), so
++# olddefconfig preserves this explicit "not set" after the fragment is merged.
++# CONFIG_X86_CET may stay enabled if shadow stack support selects it; that is
++# harmless, only the IBT half is disabled here.
++# CONFIG_X86_KERNEL_IBT is not set
+diff --git a/device.mk b/device.mk
+index 33306e5..edc10e7 100644
+--- a/device.mk
++++ b/device.mk
+@@ -21,6 +21,13 @@ PRODUCT_COPY_FILES += \
+ # Kernel (Prebuilt)
+ TARGET_PREBUILT_KERNEL_ARCH := x86_64
+ 
++# KernelSU-Next
++# Kernel side is compiled in through configs/kernel/kernelsu.config; this is the
++# manager UI, imported presigned so the kernel's manager-certificate check
++# (KernelSU-Next/kernel/Kbuild EXPECTED_MANAGER_HASH) keeps matching.
++PRODUCT_PACKAGES += \
++    KernelSU-Next
++
+ # Soong namespaces
+ PRODUCT_SOONG_NAMESPACES += \
+     $(DEVICE_PATH)
+diff --git a/lineage_virtio_x86_64.mk b/lineage_virtio_x86_64.mk
+index 42f7ef9..7416160 100644
+--- a/lineage_virtio_x86_64.mk
++++ b/lineage_virtio_x86_64.mk
+@@ -23,3 +23,8 @@ PRODUCT_MODEL := VirtIO x86_64
+ PRODUCT_VENDOR_PROPERTIES += \
+     ro.soc.manufacturer=$(PRODUCT_MANUFACTURER) \
+     ro.soc.model=$(PRODUCT_DEVICE)
++
++# 第三方应用替换 / 预装。
++# 必须放在所有 inherit-product 之后：extra.mk 需要从已汇总的 PRODUCT_PACKAGES
++# 里剔除 Etar / Jelly / Contacts，再追加替代应用。
++$(call inherit-product, vendor/extra/extra.mk)

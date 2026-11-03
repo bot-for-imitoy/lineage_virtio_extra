@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  把本仓库作为 vendor/extra 加入 LineageOS 23.2 源码树。
+
+  用法：
+    mkdir -p .repo/local_manifests
+    cp local_manifests/vendor-extra.xml .repo/local_manifests/
+    repo sync vendor/extra
+
+  注意：本仓库不含预编译 APK，sync 完还要按 apps/README.md 放好 7 个 APK，
+  并打上 patches/ 里的三个补丁，否则编译会失败（缺模块 / 缺权限白名单的挂载点）。
+-->
+<manifest>
+    <remote name="bot-for-imitoy"
+            fetch="https://github.com/bot-for-imitoy/" />
+
+    <project path="vendor/extra"
+             name="lineage_virtio_extra"
+             remote="bot-for-imitoy"
+             revision="main" />
+</manifest>

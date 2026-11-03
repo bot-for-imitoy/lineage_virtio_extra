@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用显示名 -->
+    <string name="app_name">Calendar</string>
+    <!-- Calendula 内置的启动器别名（CalendarNameAlias）使用的字符串 -->
+    <string name="app_name_calendar_alias">Calendar</string>
+</resources>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  预装特权应用的权限白名单。
+
+  这几个应用全部安装在 /product/priv-app，必须以白名单方式显式授予
+  signature|privileged 权限；否则在 ro.control_privapp_permissions=enforce
+  下 system_server 会直接拒绝启动。
+
+  其中 INSTALL_PACKAGES / DELETE_PACKAGES 是"静默安装 / 静默更新"的核心权限：
+  有了它，应用可以不经用户点确认框直接提交 PackageInstaller 会话完成安装。
+  需要注意：权限必须在 APK 的 AndroidManifest 里已经声明，系统无法凭空新增，
+  所以这里只列出各 APK 实际申请到的特权权限；APK 保持上游签名不做改动，
+  以免破坏它们后续的自我更新链路。
+-->
+<permissions>
+
+    <!-- F-Droid Privileged Extension：F-Droid 官方的静默安装后端 -->
+    <privapp-permissions package="org.fdroid.fdroid.privileged">
+        <permission name="android.permission.INSTALL_PACKAGES" />
+        <permission name="android.permission.DELETE_PACKAGES" />
+    </privapp-permissions>
+
+    <!-- microG Services Core（GmsCore）：
+         下面 14 项是 APK 实际申请、且 protectionLevel 里带 privileged 的全部权限。
+         判定方法见 tmp/scan_privperms.py：把 aapt2 dump badging 出来的
+         uses-permission 与 frameworks/base/core/res/AndroidManifest.xml 里的
+         protectionLevel 求交集，只保留 signature|privileged 的项。
+         （SYSTEM_ALERT_WINDOW、INTERACT_ACROSS_PROFILES 虽然也是 signature*，
+           但不含 privileged 标志，由 appop / 预装状态授予，不能也不需要写进来。） -->
+    <privapp-permissions package="com.google.android.gms">
+        <permission name="android.permission.CHANGE_DEVICE_IDLE_TEMP_WHITELIST" />
+        <permission name="android.permission.DUMP" />
+        <permission name="android.permission.INSTALL_LOCATION_PROVIDER" />
+        <permission name="android.permission.INTERACT_ACROSS_USERS" />
+        <permission name="android.permission.LOCATION_HARDWARE" />
+        <permission name="android.permission.MANAGE_USB" />
+        <permission name="android.permission.MODIFY_PHONE_STATE" />
+        <permission name="android.permission.NETWORK_SCAN" />
+        <permission name="android.permission.PROVIDE_DEFAULT_ENABLED_CREDENTIAL_SERVICE" />
+        <permission name="android.permission.PROVIDE_REMOTE_CREDENTIALS" />
+        <permission name="android.permission.START_ACTIVITIES_FROM_BACKGROUND" />
+        <permission name="android.permission.UPDATE_APP_OPS_STATS" />
+        <permission name="android.permission.UPDATE_DEVICE_STATS" />
+        <!-- 注意拼写：平台里是 WATCH_APPOPS（不是 WATCH_APP_OPS）。
+             这条写错会让 system_server 在 systemReady 阶段抛
+             IllegalStateException 直接死掉，表现为开机动画无限循环。 -->
+        <permission name="android.permission.WATCH_APPOPS" />
+    </privapp-permissions>
+
+</permissions>

@@ -1,0 +1,33 @@
+diff --git a/config/common.mk b/config/common.mk
+index f927424a..45bca2ff 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -142,9 +142,10 @@ PRODUCT_PACKAGES += \
+ 
+ # Lineage packages
+ ifeq ($(PRODUCT_IS_ATV),)
++# Jelly（LineageOS 自带浏览器）已移除：本 ROM 不预装任何浏览器，
++# 用户自行安装（见 vendor/extra/extra.mk 的说明）。
+ PRODUCT_PACKAGES += \
+-    ExactCalculator \
+-    Jelly
++    ExactCalculator
+ endif
+ 
+ ifeq ($(PRODUCT_IS_AUTOMOTIVE),)
+diff --git a/config/common_mobile_full.mk b/config/common_mobile_full.mk
+index 4de1d42f..f22c29ea 100644
+--- a/config/common_mobile_full.mk
++++ b/config/common_mobile_full.mk
+@@ -7,9 +7,10 @@ PRODUCT_SIZE := full
+ $(call inherit-product-if-exists, external/google-fonts/google-sans-flex/fonts.mk)
+ 
+ # Apps
++# Etar（LineageOS 自带日历）已移除：本 ROM 改用 Calendula，
++# 见 vendor/extra/extra.mk 与 vendor/extra/Android.bp。
+ PRODUCT_PACKAGES += \
+     Camelot \
+-    Etar \
+     Profiles \
+     Recorder \
+     Seedvault \

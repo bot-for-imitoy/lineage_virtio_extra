@@ -1,0 +1,119 @@
+//
+// 预装第三方应用（均为上游签名的原版 APK，presigned 保证可被其自身更新）
+//
+// 说明：
+//  * presigned: true 表示保留上游签名。绝对不要改成用 platform key 重签，
+//    否则会破坏这些应用"自己更新自己"的签名校验链。
+//  * preprocessed: true 是 presigned + targetSdk>=30 的硬性要求：APK 已经做过
+//    zipalign 和 v2 签名，告诉构建系统别再动它（否则会破坏 v2 签名，
+//    直接报 "Prebuilt, presigned apks ... must set preprocessed: true"）。
+//  * skip_preprocessed_apk_checks: true 用于特权应用。构建系统对"特权 + 预编译"
+//    APK 有一条"classes.dex 必须未压缩（Stored）"的检查，原本是为了就地
+//    dexpreopt；这些上游 APK 的 dex 都是 Deflate 压缩的，而本产品已经用
+//    DONT_DEXPREOPT_PREBUILTS 关掉了预编译 APK 的 dexpreopt，
+//    压缩 dex 只影响启动时多一次解压，功能无损，所以跳过该校验。
+//    （不能靠重新压缩 APK 解决：那会破坏 v2 签名，应用就再也无法自我更新。）
+//  * 预编译 APK 的 dexpreopt 由 BoardConfig.mk 里的 DONT_DEXPREOPT_PREBUILTS
+//    统一关闭（microG 108MB、Obtainium 37MB 这类大 APK dex2oat 太吃内存）。
+//
+
+// ---------------------------------------------------------------------------
+// 替换系统自带应用（普通应用，装在 /product/app）
+// ---------------------------------------------------------------------------
+
+// 日历：Calendula (Codeberg / F-Droid)
+android_app_import {
+    name: "Calendula",
+    apk: "apps/Calendula.apk",
+    presigned: true,
+    preprocessed: true,
+    product_specific: true,
+}
+
+// 联系人：Connect You (you-apps)
+android_app_import {
+    name: "ConnectYou",
+    apk: "apps/ConnectYou.apk",
+    presigned: true,
+    preprocessed: true,
+    product_specific: true,
+}
+
+// ---------------------------------------------------------------------------
+// 预装工具类应用（装在 /product/priv-app）
+//
+// 特权是为了"静默安装/静默更新"：配合 permissions/privapp-permissions-extra.xml
+// 授予 INSTALL_PACKAGES / DELETE_PACKAGES，应用即可跳过确认框直接提交
+// PackageInstaller 会话。注意权限必须在 APK manifest 里已声明才可能生效，
+// 系统无法凭空加权限。
+// ---------------------------------------------------------------------------
+
+// Obtainium：直接从上游发布页跟进更新（除 INSTALL_PACKAGES 类的通道外，
+// 还声明了 UPDATE_PACKAGES_WITHOUT_USER_ACTION / ENFORCE_UPDATE_OWNERSHIP，
+// 这两项是 Android 14+ 的"免确认更新"通道，属 normal 权限，自动授予）
+android_app_import {
+    name: "Obtainium",
+    apk: "apps/Obtainium.apk",
+    presigned: true,
+    preprocessed: true,
+    skip_preprocessed_apk_checks: true,
+    privileged: true,
+    product_specific: true,
+}
+
+// F-Droid 客户端
+android_app_import {
+    name: "F-Droid",
+    apk: "apps/F-Droid.apk",
+    presigned: true,
+    preprocessed: true,
+    skip_preprocessed_apk_checks: true,
+    privileged: true,
+    product_specific: true,
+}
+
+// F-Droid Privileged Extension：F-Droid 官方的静默安装后端服务，
+// F-Droid 客户端自己并不申请 INSTALL_PACKAGES，静默安装要靠这个服务。
+android_app_import {
+    name: "F-DroidPrivilegedExtension",
+    apk: "apps/F-DroidPrivileged.apk",
+    presigned: true,
+    preprocessed: true,
+    skip_preprocessed_apk_checks: true,
+    privileged: true,
+    product_specific: true,
+}
+
+// DAVx⁵：CalDAV / CardDAV 同步
+android_app_import {
+    name: "DAVx5",
+    apk: "apps/DAVx5.apk",
+    presigned: true,
+    preprocessed: true,
+    skip_preprocessed_apk_checks: true,
+    privileged: true,
+    product_specific: true,
+}
+
+// microG Services Core（GmsCore，包名 com.google.android.gms）
+//
+// 为什么可以放 priv-app：LineageOS 自 2024-02 起自带"仅对 microG 开放"的签名伪装
+// （frameworks/base 提交 Allow signature spoofing for microG Companion/Services），
+// 判定条件是 ComputerEngine.isMicrogSigned()：
+//   1) 编译期 ANDROID_DEBUGGABLE 宏（soong product var Debuggable = userdebug/eng，
+//      与 ro.debuggable 无关，所以 userdebug 版恒为 true）；
+//   2) 包名是 com.google.android.gms 或 com.android.vending；
+//   3) 签名与框架内置的 MICROG_REAL_SIGNATURE 完全一致。
+// 本 APK 已核对：签名 DER 与 MICROG_REAL_SIGNATURE 逐字节相同，manifest 里带
+// <meta-data android:name="fake-signature">，因此装好后 microG 自检的
+// "Spoof signature" 项会直接是已授权状态，不需要任何补丁或 Xposed。
+// 特权白名单见 permissions/privapp-permissions-extra.xml（14 项）。
+android_app_import {
+    name: "GmsCore",
+    apk: "apps/microG.apk",
+    presigned: true,
+    preprocessed: true,
+    skip_preprocessed_apk_checks: true,
+    privileged: true,
+    product_specific: true,
+}
