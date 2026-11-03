@@ -77,6 +77,20 @@ m -j4 isoimage-install
 `PRODUCTS.$(INTERNAL_PRODUCT).PRODUCT_PACKAGES` 的快照节点里取的。在 `extra.mk`
 里对 `PRODUCT_PACKAGES` 做 `filter-out` 实测一个都过滤不掉。
 
+## 提交与分支
+
+改动分别落在三处，都能直接看到 diff：
+
+| 位置 | 分支 | 提交 |
+|---|---|---|
+| 本仓库 | `main` | `vendor/extra: 应用替换 + microG + 外观覆盖` |
+| `bot-for-imitoy/android_vendor_lineage` | `lineage-23.2-virtio-extra` | [`4b0634b`](https://github.com/bot-for-imitoy/android_vendor_lineage/commit/4b0634b7f42ea1cfa896b43254e41dcb48bb7db5) 移除 Etar / Jelly |
+| `bot-for-imitoy/android_build` | `lineage-23.2-virtio-extra` | [`9e57395`](https://github.com/bot-for-imitoy/android_build/commit/9e573954acc7745a20097fff7cbc5a8dbdf20870) 移除 Contacts |
+| 设备树 `device/virt/virtio_x86_64` | — | 见 [`patches/0003`](patches/0003-device_virt_virtio_x86_64.patch)（GitHub 对新建 Fork 有频率限制，这一份暂以补丁形式提供） |
+
+仓库里的 `patches/` 与上面的提交内容是同一份改动，两种方式任选：
+已经 clone 了上游仓库就用 `git am`；想直接对照就看提交。
+
 ## 依赖仓库与 Fork
 
 预编译 APK 全部是上游**原版签名**包，因此本仓库一个字节的二进制都不收录，
@@ -95,6 +109,8 @@ m -j4 isoimage-install
 | Etar（图标来源） | [LineageOS/android_packages_apps_Etar](https://github.com/LineageOS/android_packages_apps_Etar) | [bot-for-imitoy/android_packages_apps_Etar](https://github.com/bot-for-imitoy/android_packages_apps_Etar) | 日历图标 |
 | Contacts（图标来源） | [LineageOS/android_packages_apps_Contacts](https://github.com/LineageOS/android_packages_apps_Contacts) | [bot-for-imitoy/android_packages_apps_Contacts](https://github.com/bot-for-imitoy/android_packages_apps_Contacts) | 联系人图标 |
 | vendor/lineage | [LineageOS/android_vendor_lineage](https://github.com/LineageOS/android_vendor_lineage) | [bot-for-imitoy/android_vendor_lineage](https://github.com/bot-for-imitoy/android_vendor_lineage) | 补丁 0001 的目标 |
+| build/make | [LineageOS/android_build](https://github.com/LineageOS/android_build) | [bot-for-imitoy/android_build](https://github.com/bot-for-imitoy/android_build) | 补丁 0002 的目标 |
+| 设备树 | [LineageOS/android_device_virt_virtio_x86_64](https://github.com/LineageOS/android_device_virt_virtio_x86_64) | —（新建 Fork 被 GitHub 限流，改动以补丁 0003 提供） | 补丁 0003 的目标 |
 
 ## 几个关键点
 
