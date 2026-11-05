@@ -1,13 +1,41 @@
-# LineageOS 23.2 · virtio_x86_64 的 `vendor/extra`
+# LineageOS 23.2 · 定制 `vendor/extra`（virtio_x86_64 + tokay / Pixel 9）
 
-一个跑在 QEMU / virtio 平台上的 LineageOS 23.2（Android 16，userdebug）个人构建里，
-用来替换系统自带应用、预装 microG 生态的那部分配置。**只包含 `vendor/extra`
-本身**，改动到的上游仓库以补丁形式放在 `patches/`，预编译 APK 不入库（见
+一个 LineageOS 23.2（Android 16，userdebug）个人构建里，
+用来替换系统自带应用、预装 microG 生态与 KernelSU-Next 的那部分配置。
+支持两个目标：**virtio_x86_64**（QEMU 虚拟机）与 **tokay**（Pixel 9 真机）。
+**只包含 `vendor/extra` 本身**，改动到的上游仓库以补丁形式放在 `patches/`，
+tokay 专属集成件在 [`tokay/`](tokay/)，预编译 APK 不入库（见
 [`apps/README.md`](apps/README.md)）。
 
-- 设备：`lineage_virtio_x86_64-trunk_staging-userdebug`
+- 设备：`lineage_virtio_x86_64-trunk_staging-userdebug`、`lineage_tokay-userdebug`
 - 基线：LineageOS 23.2（`refs/heads/lineage-23.2`）
-- 构建产物：`lineage-23.2-*-UNOFFICIAL-virtio_x86_64.{iso,img,zip}`
+- 构建产物：`lineage-23.2-*-UNOFFICIAL-virtio_x86_64.{iso,img,zip}`、
+  `lineage-23.2-*-UNOFFICIAL-tokay.zip`
+
+## 变更记录
+
+### 2026-11-05 · tokay 两项修复（KernelSU 版本号 / Obtainium ABI）
+
+- **KernelSU 显示 v0.0.1**：KSU 源码以拷贝方式进内核树（非 git 仓库），
+  Kbuild 的 `git describe` 版本检测落空，落入硬编码 fallback `v0.0.1`，
+  管理器因版本过旧拒绝装模块。改为固定 `KSU_VERSION=33355 /
+  KSU_VERSION_TAG=v3.4.2`（见 `tokay/patches/0001-*.patch`）。
+- **Obtainium 在 /priv-app 却不显示**：`apps/Obtainium.apk` 是 x86_64 构建
+  （virtio 时代遗留），arm64 设备 PM 整包跳过 ABI 不匹配的 APK。换官方
+  `app-arm64-v8a-release.apk`（v1.7.3，versionCode 23613）。
+
+### 2026-11-04/05 · tokay（Pixel 9）目标 + KernelSU-Next + AVB 自签
+
+- 新增 **tokay**（Pixel 9）构建目标：`vendor/extra/product.mk` 全局接入
+  （`vendor/lineage/config/common.mk` 顶部 `inherit-product-if-exists`），
+  virtio 与真机共用同一套定制。
+- 预装 **KernelSU-Next v3.4.2**：管理器 presigned 装 `/product/app/`，
+  gs-6.1 内核 `CONFIG_KSU=y` 强制源码构建（`use_prebuilt_gki=false`，
+  否则改动不进镜像）。集成件见 [`tokay/`](tokay/)。
+- **AVB 自签 + 锁 Bootloader**：`vendor/lineage-priv/keys/` 自签证书集，
+  `AVB_CUSTOM_KEY_PATH` + `WITH_AVB=true` 重签 vbmeta，
+  `avb_pkmd.bin` 烧 `avb_custom_key` 分区后 `fastboot flashing lock`。
+  另修蓝牙 `@BLUETOOTH` 证书目录回落测试密钥导致的 FC（`tokay/keys.mk`）。
 
 ## 改动一览
 
@@ -18,6 +46,7 @@
 | 浏览器 | **不预装任何浏览器**（Jelly 与 Firefox 都已移除，由用户自行安装） |
 | GMS | 预装 **microG GmsCore**（`com.google.android.gms`，特权应用），依赖 LineageOS 自带的、仅对官方签名 microG 开放的签名伪装 |
 | 工具 | 预装 **F-Droid** + **F-Droid Privileged Extension** + **DAVx⁵** + **Obtainium**，均装为特权应用以获得静默安装 / 静默更新 |
+| Root | 预装 **KernelSU-Next v3.4.2**（管理器 + gs-6.1 内核 `CONFIG_KSU=y`，tokay 目标，见 [`tokay/`](tokay/)） |
 | 系统 | 特权权限白名单 16 条、Doze 白名单 5 个包、关闭预编译 APK 的 dexpreopt |
 
 > 说明：本仓库替换掉了 LineageOS 的日历与联系人，但**保留了各自的 provider**
@@ -29,12 +58,14 @@
 ```
 Android.bp                    预编译 APK 的 android_app_import 定义
 extra.mk                      PRODUCT_PACKAGES / PRODUCT_COPY_FILES，被设备树 inherit
+product.mk                    全局接入点（vendor/lineage/config/common.mk inherit 本文件）
 apps/                         放置 7 个上游 APK（不入库），含 SHA256SUMS
 overlays/calendula/           静态 RRO：显示名 + 图标
 overlays/connectyou/          静态 RRO：显示名 + 图标
 permissions/                  特权权限白名单（privapp-permissions-extra.xml）
 sysconfig/                    电池优化白名单（sysconfig-extra.xml）
 patches/                      对上游仓库的改动，逐个仓库一个补丁
+tokay/                        Pixel 9 专属集成件（KernelSU-Next、签名、内核构建）
 local_manifests/              把本仓库挂到 vendor/extra 的 repo local manifest
 tools/verify-apps.sh          校验 apps/ 下 APK 的 SHA-256
 ```

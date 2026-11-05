@@ -1,0 +1,45 @@
+//
+// KernelSU-Next manager, preinstalled as the root management UI.
+//
+// The APK is the official v3.4.2 release and is imported presigned on purpose:
+// the kernel validates the manager by the SHA-256 of its signing certificate
+// (EXPECTED_MANAGER_HASH in KernelSU-Next/kernel/Kbuild). Re-signing it with
+// this tree's keys would break root detection, so it must stay untouched.
+//
+// v3.4.2 reports ksu_version 33355, which is what the pinned KernelSU-Next
+// v3.4.2 kernel source computes (30000 + 3355 commits), so kernel and manager
+// agree on the protocol version.
+//
+android_app_import {
+    name: "KernelSU-Next",
+    apk: "KernelSU_Next.apk",
+    presigned: true,
+
+    // Install into /product/app/. Google device trees (zumapro/caimito) enforce
+    // artifact path requirements (PRODUCT_ENFORCE_ARTIFACT_PATH_REQUIREMENTS),
+    // under which device/product makefiles must not produce files inside
+    // system/ paths (generic_system.mk's requirement). The default install
+    // path system/app/ therefore breaks the soong bootstrap on tokay.
+    product_specific: true,
+
+    // The APK targets SDK 36. Soong refuses a presigned prebuilt with
+    // targetSdkVersion >= 30 unless it is marked preprocessed, because the
+    // normal pipeline would zipalign/re-sign it and thereby invalidate the
+    // v2/v3 signature that the kernel hashes (check_prebuilt_presigned_apk.py).
+    // preprocessed: true makes Soong copy the APK verbatim instead.
+    preprocessed: true,
+
+    // With preprocessed: true the same script additionally demands that the
+    // APK be 4-byte page aligned and store every lib/*.so uncompressed.
+    // The upstream release keeps its JNI libraries deflated. Recompressing
+    // them would rewrite the central directory and break the signature, which
+    // is exactly what must not happen here, so the remaining checks are opted
+    // out of. The APK declares android:extractNativeLibs="true", so the
+    // installer extracts the native libraries on first install and compressed
+    // entries are functional at runtime.
+    skip_preprocessed_apk_checks: true,
+
+    dex_preopt: {
+        enabled: false,
+    },
+}

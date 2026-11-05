@@ -43,6 +43,12 @@ PRODUCT_PACKAGES += \
     DAVx5 \
     GmsCore
 
+# KernelSU-Next 管理器（presigned APK，内核按 EXPECTED_MANAGER_HASH 校验，
+# 不能用本树密钥重签）。内核侧已把 CONFIG_KSU=y 编进 gs-6.1（见
+# out-kernel/google/gs-6.1/private/devices/google/caimito/caimito_defconfig）。
+PRODUCT_PACKAGES += \
+    KernelSU-Next
+
 # ---------------------------------------------------------------------------
 # 3. 外观覆盖（RRO）
 #    Calendula -> 显示名 Calendar / 日历，图标换成 LineageOS 自带日历 Etar 的图标

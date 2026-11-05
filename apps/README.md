@@ -14,11 +14,16 @@
 | `DAVx5.apk` | `at.bitfire.davdroid` | 4.5.21-ose | [bitfireAT/davx5-ose](https://github.com/bitfireAT/davx5-ose) / [F-Droid](https://f-droid.org/packages/at.bitfire.davdroid/) |
 | `F-Droid.apk` | `org.fdroid.fdroid` | 2.0.2 (2000052) | [f-droid.org](https://f-droid.org/packages/org.fdroid.fdroid/) |
 | `F-DroidPrivileged.apk` | `org.fdroid.fdroid.privileged` | 0.2.14 (2140) | [Privileged Extension](https://gitlab.com/fdroid/privileged-extension) / [F-Droid](https://f-droid.org/packages/org.fdroid.fdroid.privileged/) |
-| `Obtainium.apk` | `dev.imranr.obtainium` | 1.7.3 (23611) | [ImranR98/Obtainium](https://github.com/ImranR98/Obtainium) |
+| `Obtainium.apk` | `dev.imranr.obtainium` | 1.7.3 (23613) · **arm64-v8a** | [ImranR98/Obtainium](https://github.com/ImranR98/Obtainium) releases 的 `app-arm64-v8a-release.apk` |
 | `microG.apk` | `com.google.android.gms` | 0.3.17.252432 | [microG/GmsCore releases](https://github.com/microG/GmsCore/releases) |
 
 > `microG.apk` 必须用 **microG 官方发布（官方签名）** 的 APK。LineageOS 的签名伪装
 > 只对 `MICROG_REAL_SIGNATURE` 逐字节匹配的包生效，换成自己重签的版本会直接失效。
+
+> **Obtainium 必须下 `app-arm64-v8a-release.apk`**（分 ABI 发布）。通用
+> `app-release.apk` 是 x86_64 构建，arm64 设备的 Package Manager 会整包跳过
+> ABI 不匹配的 APK——文件在 `/priv-app` 里但"未安装"，列表和桌面都不出现。
+> 核对：`aapt2 dump badging Obtainium.apk | grep native-code` 应为 `arm64-v8a`。
 
 校验：
 
