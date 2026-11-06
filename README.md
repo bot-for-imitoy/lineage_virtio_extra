@@ -14,6 +14,13 @@ tokay 专属集成件在 [`tokay/`](tokay/)，预编译 APK 不入库（见
 
 ## 变更记录
 
+### 2026-11-06 · user 最终用户版 + 构建脚本变体参数化
+
+- 构建脚本（`tokay/build-tokay*.sh`）参数化 `VARIANT=userdebug|user`，出
+  **user 最终用户版**（`ro.build.type=user`、`ro.debuggable=0`、adb 不可 root），
+  KernelSU / microG / 预装应用 / AVB 自签锁 Bootloader 与 userdebug 版一致。
+- 产物核对全绿：KSU `v3.4.2` 进内核、Obtainium arm64-v8a 进 product.img。
+
 ### 2026-11-05 · tokay 两项修复（KernelSU 版本号 / Obtainium ABI）
 
 - **KernelSU 显示 v0.0.1**：KSU 源码以拷贝方式进内核树（非 git 仓库），

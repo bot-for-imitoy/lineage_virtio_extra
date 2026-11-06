@@ -63,6 +63,23 @@ tokay 要求锁 Bootloader，因此整套 AVB/OTA/APK 签名用**自签密钥**�
   编译；`avb_pkmd.bin` 烧进 `avb_custom_key` 分区后
   `fastboot flashing lock`。
 
+## 构建（build-tokay.sh / build-tokay-in-container.sh）
+
+`build-tokay.sh` 是宿主入口（`setsid nohup ./build-tokay.sh ...`，必须在真实
+shell 跑，agent 沙箱的批量文件操作守卫会打断 soong 分析），`build-tokay-in-container.sh`
+在 `lineage-builder:26.04` 容器内执行 lunch + `m bacon`。要点：
+
+- **变体**：`VARIANT=userdebug|user`（默认 userdebug）。lunch 三段式
+  `lineage_tokay-trunk_staging-$VARIANT`。user 版核对 `ro.build.type=user` /
+  `ro.debuggable=0`；注意 user 版 adb 不可 root（KernelSU 不受影响）。
+  变体切换共用 out/，会触发约 6 万目标重编（~4 小时量级）。
+- **内核**：`device/google/caimito-kernels/6.1/Image.lz4` 存在时 lunch 自动
+  `SKIP_KERNEL_BUILD=1`，不重同步/重编内核。
+- **AVB 自签**：容器内固定 `AVB_CUSTOM_KEY_PATH=vendor/lineage-priv/keys/avb.pem`
+  + `WITH_AVB=true`（见上文签名一节）。
+- 内存：dexing 阶段峰值 16~17G/19G，宿主配好 zram + 磁盘 swap 兜底；
+  OOM 崩掉后直接重跑，Soong 增量续传。
+
 ## Obtainium ABI 陷阱（已修，记录在此防复发）
 
 `Obtainium.apk` 必须用官方发布的 **`app-arm64-v8a-release.apk`**。
